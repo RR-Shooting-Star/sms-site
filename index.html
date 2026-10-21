@@ -81,7 +81,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .ofuda .stamp{position:absolute;left:50%;bottom:9%;width:40%;aspect-ratio:1;transform:translateX(-50%) scale(1.5) rotate(4deg);border:3px solid var(--shu);color:var(--shu);font-family:var(--kanji);font-weight:400;font-size:clamp(13px,1.4vw,16px);display:grid;place-items:center;writing-mode:vertical-rl;letter-spacing:.05em;opacity:0;transition:opacity .18s ease-out,transform .18s ease-out;pointer-events:none;background:rgba(230,201,95,.6)}
 .ofuda.lit{box-shadow:0 0 60px 16px rgba(255,214,120,.5),0 0 140px 40px rgba(116,239,226,.25);filter:brightness(1.12)}
 .ofuda.lit .stamp{opacity:1;transform:translateX(-50%) scale(1) rotate(4deg)}
-.hint{font-family:var(--kanji);font-weight:600;font-size:clamp(18px,1.6vw,22px);letter-spacing:.5em;padding-left:.5em;color:var(--ink);text-shadow:0 2px 12px rgba(0,0,0,.9);text-align:center}
+.hint{font-family:var(--kanji);font-weight:600;font-size:clamp(18px,1.6vw,22px);letter-spacing:.12em;padding-left:.12em;color:var(--ink);text-shadow:0 2px 12px rgba(0,0,0,.9);text-align:center}
 .hint small{display:block;font-size:13px;color:var(--dim);margin-top:2px}
 .burn{opacity:0;transform:translate(-50%,-56%) scale(.9);filter:blur(4px) brightness(1.6);pointer-events:none}
 
@@ -951,6 +951,20 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
 .rm-vote.down.on{color:#7fb3d9}.rm-vote.down.on svg{fill:rgba(127,179,217,.25)}
 @media (hover:hover) and (pointer:fine){.rm-vote.up:hover{color:#e0b84a}.rm-vote.down:hover{color:#7fb3d9}}
 
+/* 古/今 안내 */
+#stTip{position:fixed;inset:0;z-index:80;opacity:0;transition:opacity .25s ease}
+#stTip.on{opacity:1}
+.st-ring{position:fixed;border:2px solid #e0b84a;border-radius:4px;box-shadow:0 0 0 9999px rgba(4,5,8,.78),0 0 22px rgba(224,184,74,.55);pointer-events:auto}
+.st-box{position:fixed;box-sizing:border-box;background:#11141b;border:1px solid #2a3040;border-top:3px solid #e0b84a;padding:18px 18px 16px;color:var(--ink);box-shadow:0 18px 50px rgba(0,0,0,.6)}
+.st-box::before{content:"";position:absolute;top:-11px;right:28px;border:8px solid transparent;border-bottom-color:#e0b84a}
+.st-box b#stTipT{display:block;font-size:17px;margin-bottom:8px}
+.st-box p{margin:0;font-size:15px;line-height:1.7}
+.st-box .st-sub{margin-top:6px;font-size:13.5px;color:var(--dim)}
+.st-k{display:inline-block;font-family:var(--kanji);padding:0 6px;border:1px solid rgba(236,231,218,.4);line-height:1.5}
+.st-ok{display:block;margin:14px 0 0 auto;font-size:15px;font-weight:700;color:#0a0d13;background:#e0b84a;padding:9px 22px;transition:transform .16s ease-out}
+.st-ok:active{transform:scale(.97)}
+@media (prefers-reduced-motion:reduce){#stTip{transition:none}}
+
 /* 인물 사진 넘기기 */
 .pc-ph img,.pf-ph img{position:absolute;inset:0;opacity:0;transition:opacity .35s ease}
 .pc-ph img.on,.pf-ph img.on{opacity:1}
@@ -1041,7 +1055,7 @@ button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
       <canvas id="ink"></canvas>
       <div class="stamp">開門</div>
     </div>
-    <p class="hint" lang="zh-Hant">一筆開門</p>
+    <p class="hint">부적을 완성해 개문하기</p>
   </div>
   <button class="skip" id="skip">그냥 들어가기</button>
 
@@ -2239,6 +2253,23 @@ PAGES.rumor = () => { let nm = ''; try { nm = localStorage.getItem('sms-rumor-na
     <div class="rm-lb" id="rmLb" hidden><img alt=""><button data-lb="prev" aria-label="이전">‹</button><button data-lb="next" aria-label="다음">›</button><span class="rm-lbn"></span></div>
   </section>
   <div class="pg-end"><span></span><button class="pg-back" data-back>골목으로 돌아가기</button></div>`; };
+/* ---------- 처음 들어온 사람에게 古/今 버튼 안내 (한 번만) ---------- */
+function styleTip(){
+  let seen = false; try { seen = localStorage.getItem('sms-style-tip') === '1'; } catch(e){}
+  const btns = page.querySelector('.pg-style'); if (seen || !btns || $('#stTip')) return;
+  const tip = document.createElement('div'); tip.id = 'stTip'; tip.setAttribute('role','dialog'); tip.setAttribute('aria-modal','true'); tip.setAttribute('aria-labelledby','stTipT');
+  tip.innerHTML = `<div class="st-ring"></div><div class="st-box"><b id="stTipT">문체를 바꿀 수 있어요</b><p>오른쪽 위 <span class="st-k">古</span> <span class="st-k">今</span> 버튼으로 글의 문체를 고를 수 있어요.</p><p class="st-sub"><b>古</b> 국한문을 섞은 옛 문체 · <b>今</b> 쉬운 현대 문체</p><button class="st-ok">확인</button></div>`;
+  page.appendChild(tip);
+  const place = () => { const r = btns.getBoundingClientRect(), ring = tip.querySelector('.st-ring'), box = tip.querySelector('.st-box');
+    ring.style.cssText = `left:${r.left-6}px;top:${r.top-6}px;width:${r.width+12}px;height:${r.height+12}px`;
+    const w = Math.min(320, innerWidth - 32); box.style.width = w+'px';
+    box.style.top = (r.bottom + 18)+'px'; box.style.left = Math.max(16, Math.min(r.right - w, innerWidth - w - 16))+'px'; };
+  place(); addEventListener('resize', place);
+  requestAnimationFrame(() => tip.classList.add('on'));
+  const ok = tip.querySelector('.st-ok'); ok.focus({preventScroll:true});
+  ok.addEventListener('click', () => { try { localStorage.setItem('sms-style-tip','1'); } catch(e){}
+    removeEventListener('resize', place); tip.classList.remove('on'); setTimeout(()=>tip.remove(), RM?0:250); });
+}
 let pfLast = null;
 function openProfile(code, from){
   const box = $('#pfBox'); pfLast = from || null;
@@ -2365,6 +2396,7 @@ async function goPage(key, link){
   page.style.filter = 'none'; drawGlass(0,0);
   page.querySelector('.pg-back').focus({preventScroll:true});
   inPage = true; busy = false;
+  if (key !== 'rumor') styleTip();
 }
 async function backToAlley(){
   if (busy || !inPage) return; busy = true; makeDrops();
